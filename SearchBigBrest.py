@@ -35,9 +35,42 @@ def login():
     r = _session.post(PHONE_LOGIN, data)
     print (r.json())['msg']
 
-def postData(url_token,pagenum):
+
+
+
+def digui(url_token,pagenum,nowPage,allOutPutList):
 
 	
+	allOutPutList = allOutPutList
+
+	if pagenum < nowPage:
+		json.dump(allOutPutList, open('newjsonfile2.txt', 'w'))
+		print('保存json完成')
+
+		return allOutPutList
+
+	
+
+	offset = nowPage * limit
+	print('第',str(nowPage),'页',str(offset))
+
+	try:
+		outPutList = start(url_token,offset)
+		if len(outPutList) > 0 :
+			allOutPutList.append(outPutList)
+			time.sleep(2)
+		digui(url_token,pagenum,nowPage+1,allOutPutList)
+	except: 
+		print ('此页失败,重新来过')
+		digui(url_token,pagenum,nowPage,allOutPutList)
+	
+		
+
+	
+
+def postData(url_token,pagenum):
+
+	postData(url_token,pagenum)
 
 	allOutPutList = []
 
@@ -45,9 +78,16 @@ def postData(url_token,pagenum):
 		offset = i * limit
 		print('第',str(i),'页',str(offset))
 
-		outPutList = start(url_token,offset)
-		allOutPutList.append(outPutList)
-		time.sleep(10)
+		try:
+			outPutList = start(url_token,offset)
+			allOutPutList.append(outPutList)
+			time.sleep(2)
+		except: 
+			print ('此页失败,重新来过')
+
+			continue	
+	
+		
 
 	json.dump(allOutPutList, open('newjsonfile.txt', 'w'))
 	print('保存json完成')
@@ -131,13 +171,15 @@ def downsPic(outPutList):
 
 		for dic in outPutLists:
 
+			if  not (os.path.exists(dic['name'])):
+				os.mkdir(dic['name'])
 
 			for imgSrc in dic['imgUrls']:
 				Name =  dic['name'] + str(j)
 
 				r = requests.get(imgSrc,stream=True)
 
-				with open(Name, 'wb') as f:
+				with open('./'+dic['name']+'/' + Name, 'wb') as f:
 					for chunk in r.iter_content():
 						if chunk: # filter out keep-alive new chunks  
 							f.write(chunk)  
@@ -157,6 +199,8 @@ def downsPic(outPutList):
 if __name__ == '__main__':
 	#outPutList = start(url_token=30116337,offset=20)
 	
-	outPutList = postData(url_token=30116337,pagenum=2)
-	downsPic(outPutList)
+	outPutList = digui(url_token=30116337,pagenum=10,nowPage=0,allOutPutList=[])
+	#downsPic(outPutList)
+
+	
 
