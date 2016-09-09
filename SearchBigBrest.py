@@ -4,7 +4,7 @@ import json
 from bs4 import BeautifulSoup
 import os
 import time
-
+import threading
 
 Default_Header = {'X-Requested-With': 'XMLHttpRequest',
                   'Referer': 'http://www.zhihu.com',
@@ -44,7 +44,7 @@ def digui(url_token,pagenum,nowPage,allOutPutList):
 	allOutPutList = allOutPutList
 
 	if pagenum < nowPage:
-		json.dump(allOutPutList, open('newjsonfile2.txt', 'w'))
+		json.dump(allOutPutList, open(str(url_token)+'.txt', 'w'))
 		print('保存json完成')
 
 		return allOutPutList
@@ -52,7 +52,7 @@ def digui(url_token,pagenum,nowPage,allOutPutList):
 	
 
 	offset = nowPage * limit
-	print('第',str(nowPage),'页',str(offset))
+	print(str(url_token),'第',str(nowPage),'页',str(offset))
 
 	try:
 		outPutList = start(url_token,offset)
@@ -162,24 +162,29 @@ def start(url_token,offset):
 
 	return outPutList
 
-def downsPic(outPutList):
+def downsPic(filename):
 
 	j = 1
 
-	for outPutLists in outPutList:
+	f = open('./'+filename+'.txt','r')
 
+	outPutList = json.load(f)
+
+	for outPutLists in outPutList:
+		if  not (os.path.exists('./'+filename)):
+				os.mkdir('./'+filename)
 
 		for dic in outPutLists:
 
-			if  not (os.path.exists(dic['name'])):
-				os.mkdir(dic['name'])
+			if  not (os.path.exists('./'+filename+'/'+dic['name'])):
+				os.mkdir('./'+filename+'/'+dic['name'])
 
 			for imgSrc in dic['imgUrls']:
 				Name =  dic['name'] + str(j)
 
 				r = requests.get(imgSrc,stream=True)
 
-				with open('./'+dic['name']+'/' + Name, 'wb') as f:
+				with open('./'+filename+'/'+dic['name']+'/' + Name, 'wb') as f:
 					for chunk in r.iter_content():
 						if chunk: # filter out keep-alive new chunks  
 							f.write(chunk)  
@@ -196,10 +201,43 @@ def downsPic(outPutList):
 
 
 
+
+threads = []
+
+t1 = threading.Thread(target=digui,args=(34663823,10,0,[]))
+
+threads.append(t1)
+
+t2 = threading.Thread(target=digui,args=(36634504,10,0,[]))
+
+threads.append(t2)
+
+# threads = []
+
+# t1 = threading.Thread(target=downsPic,args=('34243513',))
+
+# threads.append(t1)
+
+# t2 = threading.Thread(target=downsPic,args=('37006507',))
+
+# threads.append(t2)
+
 if __name__ == '__main__':
+
+
+	i = 0
+	for t in threads:
+	
+		print ('开始第',str(i),'个线程')
+		t.start()
+		i = i +1
+
 	#outPutList = start(url_token=30116337,offset=20)
 	
-	outPutList = digui(url_token=30116337,pagenum=10,nowPage=0,allOutPutList=[])
+
+
+
+	#outPutList = digui(url_token=30116337,pagenum=10,nowPage=0,allOutPutList=[])
 	#downsPic(outPutList)
 
 	
